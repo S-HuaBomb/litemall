@@ -5,6 +5,7 @@ import com.github.binarywang.wxpay.bean.notify.WxPayOrderNotifyResult;
 import com.github.binarywang.wxpay.bean.order.WxPayMpOrderResult;
 import com.github.binarywang.wxpay.bean.request.WxPayUnifiedOrderRequest;
 import com.github.binarywang.wxpay.bean.result.BaseWxPayResult;
+import com.github.binarywang.wxpay.constant.WxPayConstants;
 import com.github.binarywang.wxpay.exception.WxPayException;
 import com.github.binarywang.wxpay.service.WxPayService;
 import com.github.pagehelper.PageInfo;
@@ -278,7 +279,7 @@ public class WxOrderService {
         }
 
         // 收货地址
-        LitemallAddress checkedAddress = addressService.findById(addressId);
+        LitemallAddress checkedAddress = addressService.query(userId, addressId);
         if (checkedAddress == null) {
             return ResponseUtil.badArgument();
         }
@@ -601,6 +602,15 @@ public class WxOrderService {
         WxPayOrderNotifyResult result = null;
         try {
             result = wxPayService.parseOrderNotifyResult(xmlResult);
+
+            if(!WxPayConstants.ResultCode.SUCCESS.equals(result.getResultCode())){
+                logger.error(xmlResult);
+                throw new WxPayException("微信通知支付失败！");
+            }
+            if(!WxPayConstants.ResultCode.SUCCESS.equals(result.getReturnCode())){
+                logger.error(xmlResult);
+                throw new WxPayException("微信通知支付失败！");
+            }
         } catch (WxPayException e) {
             e.printStackTrace();
             return WxPayNotifyResponse.fail(e.getMessage());
